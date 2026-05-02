@@ -1,0 +1,59 @@
+version: "3.9"
+
+services:
+  # ── Base de datos ────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: tienda_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       ${DB_NAME}
+      POSTGRES_USER:     ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      # Scripts SQL se ejecutan en orden alfabético al iniciar
+      - ./db/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - ./db/02_seed_data.sql:/docker-entrypoint-initdb.d/02_seed_data.sql
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── Backend (Node.js + Express) ──────────────────────────────
+  backend:
+    build: ./backend
+    container_name: tienda_backend
+    restart: unless-stopped
+    environment:
+      DB_HOST:     db
+      DB_PORT:     5432
+      DB_NAME:     ${DB_NAME}
+      DB_USER:     ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      PORT:        ${BACKEND_PORT}
+      JWT_SECRET:  ${JWT_SECRET}
+    ports:
+      - "${BACKEND_PORT}:${BACKEND_PORT}"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # ── Frontend (React + Vite → Nginx) ─────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: http://localhost:${BACKEND_PORT}
+    container_name: tienda_frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT}:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
