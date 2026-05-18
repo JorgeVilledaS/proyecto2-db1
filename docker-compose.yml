@@ -14,6 +14,8 @@ services:
       # Scripts SQL se ejecutan en orden alfabético al iniciar
       - ./db/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
       - ./db/02_seed_data.sql:/docker-entrypoint-initdb.d/02_seed_data.sql
+      - ./db/03_roles.sql:/docker-entrypoint-initdb.d/03_roles.sql
+      - ./db/04_usuarios.sql:/docker-entrypoint-initdb.d/04_usuarios.sql
       - pgdata:/var/lib/postgresql/data
     ports:
       - "${DB_PORT}:5432"
