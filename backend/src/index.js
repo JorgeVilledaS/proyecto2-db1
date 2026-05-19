@@ -8,6 +8,9 @@ const empleadosRouter   = require('./routes/empleados');
 const clientesRouter    = require('./routes/clientes');
 const ventasRouter      = require('./routes/ventas');
 const reportesRouter    = require('./routes/reportes');
+const usuariosRouter   = require('./routes/usuarios');
+const authRouter       = require('./routes/auth');
+const { requireAuth } = require('./middleware/auth');
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
@@ -30,6 +33,8 @@ app.use('/api/empleados',   empleadosRouter);
 app.use('/api/clientes',    clientesRouter);
 app.use('/api/ventas',      ventasRouter);
 app.use('/api/reportes',    reportesRouter);
+app.use('/api/usuarios',    requireAuth, usuariosRouter);
+app.use('/api/auth',       authRouter);
 
 // Health check para Docker
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
